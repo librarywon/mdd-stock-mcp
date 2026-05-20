@@ -1,0 +1,287 @@
+# stock-mcp
+
+> An MCP server for US stock Maximum Drawdown (MDD) analytics. Plug it into Claude Desktop and ask questions like "What was SPY's worst drawdown during COVID?" — Claude will fetch the data and discuss it conversationally.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python >=3.11](https://img.shields.io/badge/python-%3E%3D3.11-blue.svg)](https://www.python.org/)
+[![MCP Compatible](https://img.shields.io/badge/MCP-compatible-green.svg)](https://modelcontextprotocol.io/)
+
+---
+
+## What it does
+
+- Calculates Maximum Drawdown for any US stock over a date range
+- Returns OHLCV price history for plotting
+- Returns a daily drawdown (underwater) series
+- Compares MDD across multiple tickers side-by-side
+
+---
+
+## Quickstart (Claude Desktop)
+
+**1. Clone the repo:**
+
+```bash
+git clone https://github.com/<owner>/stock-mcp.git
+cd stock-mcp
+```
+
+**2. Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:**
+
+```json
+{
+  "mcpServers": {
+    "stock-mcp": {
+      "command": "uvx",
+      "args": ["--from", "/absolute/path/to/stock-mcp", "stock-mcp"]
+    }
+  }
+}
+```
+
+Replace `/absolute/path/to/stock-mcp` with the actual path where you cloned the repo (e.g. `/Users/yourname/Documents/stock-mcp`).
+
+**3. Restart Claude Desktop.**
+
+Ask: *"Using stock-mcp, what was AAPL's MDD between 2020-01-01 and 2020-12-31?"*
+
+---
+
+## Alternative install (after PyPI publishing)
+
+```bash
+uvx stock-mcp
+```
+
+*(Placeholder — not yet published to PyPI.)*
+
+---
+
+## Tools
+
+| Tool | Description | Example |
+|---|---|---|
+| `calculate_mdd` | Single-ticker MDD | `calculate_mdd("SPY", "2020-01-01", "2020-12-31")` |
+| `get_price_history` | OHLCV time series | `get_price_history("AAPL", "2020-01-01", "2020-06-30")` |
+| `get_drawdown_series` | Daily drawdown % series | `get_drawdown_series("QQQ", "2022-01-01", "2022-12-31")` |
+| `compare_mdd` | Multi-ticker MDD comparison | `compare_mdd(["SPY","QQQ","DIA"], "2020-01-01", "2020-12-31")` |
+
+Each tool accepts a `price` parameter: `"adj_close"` (default, dividend/split adjusted) or `"close"` (raw closing price).
+
+---
+
+## Output schemas
+
+<details>
+<summary><code>calculate_mdd</code> — success response</summary>
+
+```json
+{
+  "ticker": "SPY",
+  "mdd_pct": -0.338915,
+  "peak_date": "2020-02-19",
+  "trough_date": "2020-03-23",
+  "drawdown_duration_days": 33,
+  "recovered": false,
+  "recovery_date": null
+}
+```
+
+</details>
+
+<details>
+<summary><code>calculate_mdd</code> — error response</summary>
+
+```json
+{
+  "error": true,
+  "error_type": "InvalidTickerError",
+  "message": "InvalidTickerError: Ticker 'XYZFAKE' not found or returned no data from Yahoo Finance."
+}
+```
+
+</details>
+
+<details>
+<summary><code>get_price_history</code> — success response</summary>
+
+```json
+{
+  "ticker": "AAPL",
+  "price_basis": "adj_close",
+  "count": 62,
+  "data": [
+    {
+      "date": "2020-01-02",
+      "open": 296.239990,
+      "high": 300.600006,
+      "low": 295.190002,
+      "close": 298.829956,
+      "volume": 33870100
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><code>get_drawdown_series</code> — success response</summary>
+
+```json
+{
+  "ticker": "SPY",
+  "price_basis": "adj_close",
+  "count": 125,
+  "data": [
+    {"date": "2020-01-02", "drawdown_pct": 0.0},
+    {"date": "2020-01-03", "drawdown_pct": -0.007054},
+    {"date": "2020-03-23", "drawdown_pct": -0.338915}
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><code>compare_mdd</code> — success response (partial failure shown)</summary>
+
+```json
+{
+  "price_basis": "adj_close",
+  "start": "2020-01-01",
+  "end": "2020-06-30",
+  "results": [
+    {
+      "ticker": "SPY",
+      "mdd_pct": -0.338915,
+      "peak_date": "2020-02-19",
+      "trough_date": "2020-03-23",
+      "drawdown_duration_days": 33,
+      "recovered": false,
+      "recovery_date": null,
+      "error": null
+    },
+    {
+      "ticker": "XYZFAKE",
+      "mdd_pct": null,
+      "peak_date": null,
+      "trough_date": null,
+      "drawdown_duration_days": null,
+      "recovered": null,
+      "recovery_date": null,
+      "error": "InvalidTickerError: Ticker 'XYZFAKE' not found or returned no data from Yahoo Finance."
+    }
+  ]
+}
+```
+
+</details>
+
+---
+
+## How MDD is calculated
+
+- **Formula**: `drawdown_t = price_t / max(price_{0..t}) - 1`
+- **MDD** = `min(drawdown)` over the date range (most negative value)
+- **Peak**: argmax of price up to and including the trough date
+- **Recovery**: first date after trough where `price >= peak_price`
+- **Note**: `recovered=false` means "did not recover *within the queried window*", not "never recovered historically"
+
+All price values use **dividend/split-adjusted close** by default (`price="adj_close"`). Pass `price="close"` for raw unadjusted closing prices.
+
+---
+
+## Example Claude conversation
+
+> **User**: stock-mcp으로 SPY의 2020년 코로나 폭락 분석해줘
+>
+> **Claude**: [calls calculate_mdd] SPY는 2020-02-19 최고점에서 2020-03-23 최저점까지 약 -33.9%의 MDD를 기록했습니다. 회복은 2020-08-18에 완료됐어요. 그래프 그려드릴까요?
+>
+> **User**: 응
+>
+> **Claude**: [calls get_price_history + get_drawdown_series, draws chart in artifact]
+
+---
+
+## Limitations
+
+- **US stocks only** — Yahoo Finance ticker universe. International tickers are not supported.
+- **Daily resolution** — No intraday (1m, 5m, etc.) data.
+- **yfinance is unofficial** — Yahoo Finance may rate-limit or change their API without notice. For production use, swap `data.py` for a paid provider like [Polygon.io](https://polygon.io/), [Alpha Vantage](https://www.alphavantage.co/), or [Tiingo](https://www.tiingo.com/).
+- **In-memory cache only** — Price data is cached for 5 minutes per process. Cache is lost on server restart.
+- **No real-time data** — All data is end-of-day historical prices.
+
+---
+
+## Development
+
+```bash
+# Install with dev dependencies
+uv pip install -e ".[dev]"
+
+# Run tests
+pytest tests/
+
+# Open MCP inspector (interactive tool tester)
+fastmcp dev src/stock_mcp/server.py
+```
+
+**Project structure:**
+
+```
+src/stock_mcp/
+  server.py   — FastMCP app + 4 tool definitions
+  data.py     — yfinance wrapper + TTL cache + price-column selector
+  mdd.py      — Pure MDD math functions
+  models.py   — Pydantic input/output models
+  errors.py   — Custom error types
+tests/
+  test_mdd.py — Offline math tests (no network required)
+```
+
+---
+
+## Claude Desktop config reference
+
+```json
+{
+  "mcpServers": {
+    "stock-mcp": {
+      "command": "uvx",
+      "args": ["--from", "/Users/jaewon/Documents/stock-mcp", "stock-mcp"]
+    }
+  }
+}
+```
+
+After publishing to PyPI, simplify to:
+
+```json
+{
+  "mcpServers": {
+    "stock-mcp": {
+      "command": "uvx",
+      "args": ["stock-mcp"]
+    }
+  }
+}
+```
+
+---
+
+## Contributing
+
+This is a small focused project. PRs are welcome — especially for:
+
+- Additional data providers (Polygon, Alpha Vantage, Tiingo) in `data.py`
+- Additional metrics (Sharpe ratio, CAGR, Sortino) as new tools
+- Better error messages and edge-case handling
+
+Please open an issue first for significant changes.
+
+---
+
+## License
+
+MIT — see [LICENSE](./LICENSE)
