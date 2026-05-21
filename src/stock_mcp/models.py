@@ -1,4 +1,4 @@
-"""Pydantic input/output models for stock-mcp."""
+"""Pydantic input/output models for mdd-stock-mcp."""
 
 import re
 from datetime import date

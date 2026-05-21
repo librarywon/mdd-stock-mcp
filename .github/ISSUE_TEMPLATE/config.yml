@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Question or discussion
-    url: https://github.com/librarywon/stock-mcp/discussions
+    url: https://github.com/librarywon/mdd-stock-mcp/discussions
     about: For general questions, usage help, or ideas that aren't bug reports or feature requests.

@@ -12,7 +12,7 @@ from stock_mcp.mdd import compute_drawdown_series
 from stock_mcp.models import CompareQuery, StockQuery
 
 mcp = FastMCP(
-    "stock-mcp",
+    "mdd-stock-mcp",
     instructions=(
         "US stock Maximum Drawdown analytics. "
         "Pass ticker + date range. Returns JSON data for charting."
@@ -297,7 +297,7 @@ def _safe_int(val) -> int | None:
 def main() -> None:
     import argparse
 
-    parser = argparse.ArgumentParser(prog="stock-mcp", description="US stock MDD MCP server")
+    parser = argparse.ArgumentParser(prog="mdd-stock-mcp", description="US stock MDD MCP server")
     parser.add_argument(
         "--transport",
         choices=["stdio", "http"],

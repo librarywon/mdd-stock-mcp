@@ -1,5 +1,5 @@
 [project]
-name = "stock-mcp"
+name = "mdd-stock-mcp"
 version = "0.1.0"
 description = "MCP server for US stock Maximum Drawdown analytics"
 readme = "README.md"
@@ -28,15 +28,15 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/librarywon/stock-mcp"
-Repository = "https://github.com/librarywon/stock-mcp"
-Issues = "https://github.com/librarywon/stock-mcp/issues"
+Homepage = "https://github.com/librarywon/mdd-stock-mcp"
+Repository = "https://github.com/librarywon/mdd-stock-mcp"
+Issues = "https://github.com/librarywon/mdd-stock-mcp/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
 
 [project.scripts]
-stock-mcp = "stock_mcp.server:main"
+mdd-stock-mcp = "stock_mcp.server:main"
 
 [build-system]
 requires = ["hatchling"]

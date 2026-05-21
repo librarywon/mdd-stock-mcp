@@ -29,7 +29,7 @@ What actually happened. Include the full error message or unexpected output.
 - **Date range**: e.g. `2020-01-01` to `2020-12-31`
 - **Price basis**: `adj_close` / `close`
 - **Python version**: e.g. `3.11.9`
-- **stock-mcp version / commit**: e.g. `0.1.0` or commit hash
+- **mdd-stock-mcp version / commit**: e.g. `0.1.0` or commit hash
 - **How you're running it**: Claude Desktop / MCP Inspector / direct Python
 
 ## Full error output

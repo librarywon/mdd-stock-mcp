@@ -1,4 +1,4 @@
-# Multi-stage build for stock-mcp HTTP transport mode
+# Multi-stage build for mdd-stock-mcp HTTP transport mode
 FROM python:3.11-slim AS builder
 
 # Install uv
@@ -18,8 +18,8 @@ FROM python:3.11-slim
 
 # Copy installed packages from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin/stock-mcp /usr/local/bin/stock-mcp
+COPY --from=builder /usr/local/bin/mdd-stock-mcp /usr/local/bin/mdd-stock-mcp
 
 EXPOSE 8000
 
-CMD ["stock-mcp", "--transport", "http", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["mdd-stock-mcp", "--transport", "http", "--host", "0.0.0.0", "--port", "8000"]

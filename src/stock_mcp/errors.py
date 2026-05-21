@@ -1,8 +1,8 @@
-"""Custom error types for stock-mcp."""
+"""Custom error types for mdd-stock-mcp."""
 
 
 class StockMCPError(Exception):
-    """Base error for all stock-mcp errors."""
+    """Base error for all mdd-stock-mcp errors."""
 
     def __init__(self, message: str = ""):
         self.message = message

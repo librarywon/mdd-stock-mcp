@@ -1,4 +1,4 @@
-# stock-mcp
+# mdd-stock-mcp
 
 > An MCP server for US stock Maximum Drawdown (MDD) analytics. Plug it into Claude Desktop and ask questions like "What was SPY's worst drawdown during COVID?" — Claude will fetch the data and discuss it conversationally.
 
@@ -24,8 +24,8 @@
 **1. Clone the repo:**
 
 ```bash
-git clone https://github.com/librarywon/stock-mcp.git
-cd stock-mcp
+git clone https://github.com/librarywon/mdd-stock-mcp.git
+cd mdd-stock-mcp
 ```
 
 **2. Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:**
@@ -33,26 +33,26 @@ cd stock-mcp
 ```json
 {
   "mcpServers": {
-    "stock-mcp": {
+    "mdd-stock-mcp": {
       "command": "uvx",
-      "args": ["--from", "/absolute/path/to/stock-mcp", "stock-mcp"]
+      "args": ["--from", "/absolute/path/to/mdd-stock-mcp", "mdd-stock-mcp"]
     }
   }
 }
 ```
 
-Replace `/absolute/path/to/stock-mcp` with the actual path where you cloned the repo (e.g. `/Users/yourname/Documents/stock-mcp`).
+Replace `/absolute/path/to/mdd-stock-mcp` with the actual path where you cloned the repo (e.g. `/Users/yourname/Documents/mdd-stock-mcp`).
 
 **3. Restart Claude Desktop.**
 
-Ask: *"Using stock-mcp, what was AAPL's MDD between 2020-01-01 and 2020-12-31?"*
+Ask: *"Using mdd-stock-mcp, what was AAPL's MDD between 2020-01-01 and 2020-12-31?"*
 
 ---
 
 ## Alternative install (after PyPI publishing)
 
 ```bash
-uvx stock-mcp
+uvx mdd-stock-mcp
 ```
 
 *(Placeholder — not yet published to PyPI.)*
@@ -196,7 +196,7 @@ All price values use **dividend/split-adjusted close** by default (`price="adj_c
 
 ## Example Claude conversation
 
-> **User**: stock-mcp으로 SPY의 2020년 코로나 폭락 분석해줘
+> **User**: mdd-stock-mcp으로 SPY의 2020년 코로나 폭락 분석해줘
 >
 > **Claude**: [calls calculate_mdd] SPY는 2020-02-19 최고점에서 2020-03-23 최저점까지 약 -33.9%의 MDD를 기록했습니다. 회복은 2020-08-18에 완료됐어요. 그래프 그려드릴까요?
 >
@@ -249,9 +249,9 @@ tests/
 ```json
 {
   "mcpServers": {
-    "stock-mcp": {
+    "mdd-stock-mcp": {
       "command": "uvx",
-      "args": ["--from", "/Users/jaewon/Documents/stock-mcp", "stock-mcp"]
+      "args": ["--from", "/Users/jaewon/Documents/mdd-stock-mcp", "mdd-stock-mcp"]
     }
   }
 }
@@ -262,9 +262,9 @@ After publishing to PyPI, simplify to:
 ```json
 {
   "mcpServers": {
-    "stock-mcp": {
+    "mdd-stock-mcp": {
       "command": "uvx",
-      "args": ["stock-mcp"]
+      "args": ["mdd-stock-mcp"]
     }
   }
 }
@@ -282,10 +282,10 @@ The default transport is `stdio`, which is what Claude Desktop expects. Use the 
 
 ```bash
 # Build the image
-docker build -t stock-mcp .
+docker build -t mdd-stock-mcp .
 
 # Run with HTTP transport (e.g. for testing or a hosted setup)
-docker run -p 8000:8000 stock-mcp --transport http
+docker run -p 8000:8000 mdd-stock-mcp --transport http
 ```
 
 Replace `8000` with any port you prefer. The `--transport http` flag enables the HTTP/SSE transport mode; omit it for the default stdio mode.

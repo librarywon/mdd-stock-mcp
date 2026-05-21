@@ -1,4 +1,4 @@
-# Contributing to stock-mcp
+# Contributing to mdd-stock-mcp
 
 Thanks for your interest in contributing. This is a small, focused project — contributions that stay within scope are most likely to be merged quickly.
 
@@ -9,8 +9,8 @@ Thanks for your interest in contributing. This is a small, focused project — c
 Requires Python 3.11+ and [`uv`](https://github.com/astral-sh/uv).
 
 ```bash
-git clone https://github.com/librarywon/stock-mcp.git
-cd stock-mcp
+git clone https://github.com/librarywon/mdd-stock-mcp.git
+cd mdd-stock-mcp
 uv pip install -e ".[dev]"
 ```
 
