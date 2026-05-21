@@ -15,9 +15,9 @@ Only the latest release on the `main` branch receives security attention.
 
 ## Reporting a vulnerability
 
-**Non-sensitive issues** (e.g., a dependency with a known CVE, an information-disclosure edge case): open a [GitHub Issue](https://github.com/<owner>/stock-mcp/issues) with the label `security`.
+**Non-sensitive issues** (e.g., a dependency with a known CVE, an information-disclosure edge case): open a [GitHub Issue](https://github.com/librarywon/stock-mcp/issues) with the label `security`.
 
-**Sensitive issues** (e.g., something that could harm users if disclosed publicly before a fix is available): use GitHub's [private vulnerability reporting](https://github.com/<owner>/stock-mcp/security/advisories) feature.
+**Sensitive issues** (e.g., something that could harm users if disclosed publicly before a fix is available): use GitHub's [private vulnerability reporting](https://github.com/librarywon/stock-mcp/security/advisories) feature.
 
 Please include:
 - A description of the vulnerability

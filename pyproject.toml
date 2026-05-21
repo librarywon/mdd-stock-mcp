@@ -28,9 +28,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/<owner>/stock-mcp"
-Repository = "https://github.com/<owner>/stock-mcp"
-Issues = "https://github.com/<owner>/stock-mcp/issues"
+Homepage = "https://github.com/librarywon/stock-mcp"
+Repository = "https://github.com/librarywon/stock-mcp"
+Issues = "https://github.com/librarywon/stock-mcp/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]

@@ -24,7 +24,7 @@
 **1. Clone the repo:**
 
 ```bash
-git clone https://github.com/<owner>/stock-mcp.git
+git clone https://github.com/librarywon/stock-mcp.git
 cd stock-mcp
 ```
 
