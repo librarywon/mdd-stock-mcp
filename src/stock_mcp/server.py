@@ -295,7 +295,27 @@ def _safe_int(val) -> int | None:
 
 
 def main() -> None:
-    mcp.run()
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="stock-mcp", description="US stock MDD MCP server")
+    parser.add_argument(
+        "--transport",
+        choices=["stdio", "http"],
+        default="stdio",
+        help="Transport: 'stdio' (default, for Claude Desktop) or 'http' (for hosted/Docker)",
+    )
+    parser.add_argument("--host", default="0.0.0.0", help="HTTP host (only with --transport http)")
+    parser.add_argument("--port", type=int, default=8000, help="HTTP port (only with --transport http)")
+    args = parser.parse_args()
+
+    if args.transport == "stdio":
+        mcp.run()
+    else:
+        # FastMCP 2.x HTTP transport — "streamable-http" is the correct transport name
+        # for FastMCP >= 2.10. The alias "http" also works but "streamable-http" is canonical.
+        # Verified against fastmcp 2.14.7 source: server.py Transport literal includes
+        # "stdio", "http", "sse", "streamable-http".
+        mcp.run(transport="streamable-http", host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

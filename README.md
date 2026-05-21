@@ -6,6 +6,8 @@
 [![Python >=3.11](https://img.shields.io/badge/python-%3E%3D3.11-blue.svg)](https://www.python.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-compatible-green.svg)](https://modelcontextprotocol.io/)
 
+> **Disclaimer**: This project uses [yfinance](https://github.com/ranaroussi/yfinance), an unofficial Yahoo Finance scraper. Not affiliated with Yahoo, not for production trading systems, not for financial advice. Data may be inaccurate, delayed, or unavailable. Use at your own risk.
+
 ---
 
 ## What it does
@@ -267,6 +269,40 @@ After publishing to PyPI, simplify to:
   }
 }
 ```
+
+---
+
+## Deployment
+
+### Local (stdio) — default
+
+The default transport is `stdio`, which is what Claude Desktop expects. Use the `uvx` config from the [Quickstart](#quickstart-claude-desktop) section above.
+
+### Docker
+
+```bash
+# Build the image
+docker build -t stock-mcp .
+
+# Run with HTTP transport (e.g. for testing or a hosted setup)
+docker run -p 8000:8000 stock-mcp --transport http
+```
+
+Replace `8000` with any port you prefer. The `--transport http` flag enables the HTTP/SSE transport mode; omit it for the default stdio mode.
+
+### Smithery / hosted
+
+[Smithery](https://smithery.ai/) can host MCP servers so you don't need to run them locally. Once the `smithery.yaml` configuration is present in the repo root, you can register the server through the Smithery dashboard. See the [Smithery documentation](https://smithery.ai/) for registration instructions.
+
+---
+
+## Roadmap
+
+Planned additions (not yet scheduled — PRs welcome):
+
+- **Sharpe / Sortino / CAGR tools** — additional risk/return metrics as new MCP tools, following the same patterns as the existing four.
+- **Optional Polygon.io / Alpha Vantage providers** — drop-in replacements for the yfinance backend in `data.py`, configurable via environment variable.
+- **Shorter date ranges / intraday support** — hourly or intraday resolution for ranges under ~7 days, contingent on a stable data provider.
 
 ---
 

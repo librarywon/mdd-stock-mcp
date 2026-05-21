@@ -1,0 +1,8 @@
+# Smithery deployment manifest. See https://smithery.ai/docs for details.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: |-
+    (config) => ({ command: "stock-mcp", args: [] })
