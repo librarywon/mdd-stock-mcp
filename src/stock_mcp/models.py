@@ -7,7 +7,37 @@ from typing import Literal
 from pydantic import BaseModel, field_validator, model_validator
 
 
-_TICKER_RE = re.compile(r"^[A-Z0-9\-\.]{1,15}$")
+_TICKER_RE = re.compile(r"^[A-Z0-9\-\.]{1,20}$")
+_KR_DIGITS_RE = re.compile(r"^\d{6}$")
+_KR_SUFFIX_RE = re.compile(r"\.(KS|KQ)$")
+
+Market = Literal["us", "kr", "crypto"]
+
+
+def _normalize_ticker(ticker: str, market: str) -> str:
+    """Normalize a raw ticker to a yfinance-compatible symbol.
+
+    - kr:    "005930" -> "005930.KS" (KOSPI default); ".KS"/".KQ" passthrough.
+    - crypto: "BTC" -> "BTC-USD"; "BTC-KRW" passthrough.
+    - us:    unchanged.
+    """
+    t = ticker.strip().upper()
+    if not t:
+        raise ValueError("Ticker must not be empty.")
+
+    if market == "kr":
+        if _KR_DIGITS_RE.match(t):
+            t = f"{t}.KS"
+    elif market == "crypto":
+        if "-" not in t:
+            t = f"{t}-USD"
+
+    if not _TICKER_RE.match(t):
+        raise ValueError(
+            f"Invalid ticker format after normalization: '{t}'. "
+            f"Must be 1-20 alphanumeric characters (hyphens/dots allowed)."
+        )
+    return t
 
 
 class StockQuery(BaseModel):
@@ -15,18 +45,7 @@ class StockQuery(BaseModel):
     start: str
     end: str
     price: Literal["adj_close", "close"] = "adj_close"
-
-    @field_validator("ticker")
-    @classmethod
-    def validate_ticker(cls, v: str) -> str:
-        v = v.strip().upper()
-        if not v:
-            raise ValueError("Ticker must not be empty.")
-        if not _TICKER_RE.match(v):
-            raise ValueError(
-                f"Invalid ticker format: '{v}'. Must be 1-15 alphanumeric characters (hyphens/dots allowed)."
-            )
-        return v
+    market: Market = "us"
 
     @field_validator("start", "end")
     @classmethod
@@ -38,7 +57,9 @@ class StockQuery(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_date_range(self) -> "StockQuery":
+    def _finalize(self) -> "StockQuery":
+        self.ticker = _normalize_ticker(self.ticker, self.market)
+
         start_date = date.fromisoformat(self.start)
         end_date = date.fromisoformat(self.end)
         today = date.today()
@@ -59,23 +80,14 @@ class CompareQuery(BaseModel):
     start: str
     end: str
     price: Literal["adj_close", "close"] = "adj_close"
+    market: Market = "us"
 
     @field_validator("tickers")
     @classmethod
-    def validate_tickers(cls, v: list[str]) -> list[str]:
+    def validate_tickers_size(cls, v: list[str]) -> list[str]:
         if len(v) < 2 or len(v) > 20:
             raise ValueError("tickers must have between 2 and 20 items.")
-        result = []
-        for ticker in v:
-            t = ticker.strip().upper()
-            if not t:
-                raise ValueError("Each ticker must not be empty.")
-            if not _TICKER_RE.match(t):
-                raise ValueError(
-                    f"Invalid ticker format: '{t}'. Must be 1-15 alphanumeric characters."
-                )
-            result.append(t)
-        return result
+        return v
 
     @field_validator("start", "end")
     @classmethod
@@ -87,7 +99,9 @@ class CompareQuery(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_date_range(self) -> "CompareQuery":
+    def _finalize(self) -> "CompareQuery":
+        self.tickers = [_normalize_ticker(t, self.market) for t in self.tickers]
+
         start_date = date.fromisoformat(self.start)
         end_date = date.fromisoformat(self.end)
         today = date.today()

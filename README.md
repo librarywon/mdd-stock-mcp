@@ -1,6 +1,6 @@
 # mdd-stock-mcp
 
-> An MCP server for US stock Maximum Drawdown (MDD) analytics. Plug it into Claude Desktop and ask questions like "What was SPY's worst drawdown during COVID?" — Claude will fetch the data and discuss it conversationally.
+> An MCP server for Maximum Drawdown (MDD) analytics across US stocks, Korean stocks (KOSPI/KOSDAQ), and cryptocurrencies. Plug it into Claude Desktop and ask questions like "What was SPY's worst drawdown during COVID?" or "비트코인 2022년 MDD 알려줘" — Claude will fetch the data and discuss it conversationally.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python >=3.11](https://img.shields.io/badge/python-%3E%3D3.11-blue.svg)](https://www.python.org/)
@@ -12,10 +12,18 @@
 
 ## What it does
 
-- Calculates Maximum Drawdown for any US stock over a date range
+- Calculates Maximum Drawdown for any supported asset over a date range
 - Returns OHLCV price history for plotting
 - Returns a daily drawdown (underwater) series
 - Compares MDD across multiple tickers side-by-side
+
+**Supported markets** (via the `market` parameter):
+
+| `market` | Examples | Notes |
+|---|---|---|
+| `us` (default) | `AAPL`, `SPY`, `QQQ` | NYSE / NASDAQ |
+| `kr` | `005930` → `005930.KS` (Samsung), `035720.KQ` (KOSDAQ) | 6-digit codes auto-append `.KS` (KOSPI). Use explicit `.KQ` for KOSDAQ. |
+| `crypto` | `BTC` → `BTC-USD`, `ETH-USD`, `BTC-KRW` | Bare symbols auto-append `-USD`. |
 
 ---
 
@@ -64,11 +72,13 @@ uvx mdd-stock-mcp
 | Tool | Description | Example |
 |---|---|---|
 | `calculate_mdd` | Single-ticker MDD | `calculate_mdd("SPY", "2020-01-01", "2020-12-31")` |
-| `get_price_history` | OHLCV time series | `get_price_history("AAPL", "2020-01-01", "2020-06-30")` |
-| `get_drawdown_series` | Daily drawdown % series | `get_drawdown_series("QQQ", "2022-01-01", "2022-12-31")` |
+| `get_price_history` | OHLCV time series | `get_price_history("005930", "2024-01-01", "2024-06-30", market="kr")` |
+| `get_drawdown_series` | Daily drawdown % series | `get_drawdown_series("BTC", "2022-01-01", "2022-12-31", market="crypto")` |
 | `compare_mdd` | Multi-ticker MDD comparison | `compare_mdd(["SPY","QQQ","DIA"], "2020-01-01", "2020-12-31")` |
 
-Each tool accepts a `price` parameter: `"adj_close"` (default, dividend/split adjusted) or `"close"` (raw closing price).
+Each tool accepts:
+- `price`: `"adj_close"` (default, dividend/split adjusted) or `"close"` (raw closing price)
+- `market`: `"us"` (default), `"kr"`, or `"crypto"` — see the [supported markets table](#what-it-does)
 
 ---
 
@@ -85,7 +95,9 @@ Each tool accepts a `price` parameter: `"adj_close"` (default, dividend/split ad
   "trough_date": "2020-03-23",
   "drawdown_duration_days": 33,
   "recovered": false,
-  "recovery_date": null
+  "recovery_date": null,
+  "market": "us",
+  "currency": "USD"
 }
 ```
 
@@ -208,7 +220,7 @@ All price values use **dividend/split-adjusted close** by default (`price="adj_c
 
 ## Limitations
 
-- **US stocks only** — Yahoo Finance ticker universe. International tickers are not supported.
+- **US stocks, Korean stocks (KOSPI/KOSDAQ), and major cryptocurrencies** — limited to what Yahoo Finance exposes. Other international exchanges (Tokyo, London, etc.) aren't wired up.
 - **Daily resolution** — No intraday (1m, 5m, etc.) data.
 - **yfinance is unofficial** — Yahoo Finance may rate-limit or change their API without notice. For production use, swap `data.py` for a paid provider like [Polygon.io](https://polygon.io/), [Alpha Vantage](https://www.alphavantage.co/), or [Tiingo](https://www.tiingo.com/).
 - **In-memory cache only** — Price data is cached for 5 minutes per process. Cache is lost on server restart.
