@@ -5,7 +5,7 @@ import math
 from fastmcp import FastMCP
 from pydantic import ValidationError
 
-from stock_mcp.data import fetch_price_data, select_price_column
+from stock_mcp.data import currency_for, fetch_price_data, select_price_column
 from stock_mcp.errors import StockMCPError
 from stock_mcp.mdd import calculate_max_drawdown as _calc_mdd
 from stock_mcp.mdd import compute_drawdown_series
@@ -14,8 +14,13 @@ from stock_mcp.models import CompareQuery, StockQuery
 mcp = FastMCP(
     "mdd-stock-mcp",
     instructions=(
-        "US stock Maximum Drawdown analytics. "
-        "Pass ticker + date range. Returns JSON data for charting."
+        "Maximum Drawdown analytics for US stocks, Korean stocks (KOSPI/KOSDAQ), "
+        "and cryptocurrencies. Pass ticker + date range + market "
+        "(\"us\" default, \"kr\", or \"crypto\"). For Korean stocks, a 6-digit "
+        "code like \"005930\" auto-resolves to \"005930.KS\" (KOSPI); use the "
+        "explicit \".KQ\" suffix for KOSDAQ. For crypto, \"BTC\" auto-resolves "
+        "to \"BTC-USD\"; use \"BTC-KRW\" for a different quote currency. "
+        "Returns JSON data for charting."
     ),
 )
 
@@ -29,24 +34,29 @@ def calculate_mdd(
     start: str,
     end: str,
     price: str = "adj_close",
+    market: str = "us",
 ) -> dict:
-    """Calculate Maximum Drawdown for a US stock.
+    """Calculate Maximum Drawdown for a stock or cryptocurrency.
 
     Returns MDD percentage, peak/trough dates, duration, and recovery info.
-    Use this for single-stock drawdown analysis.
+    Use this for single-asset drawdown analysis.
 
     Args:
-        ticker: US stock ticker symbol (e.g. "AAPL", "SPY")
+        ticker: Symbol (e.g. "AAPL", "SPY", "005930" or "005930.KS", "BTC" or "BTC-USD")
         start: Start date in YYYY-MM-DD format
         end: End date in YYYY-MM-DD format
         price: Price basis - "adj_close" (default, dividend-adjusted) or "close"
+        market: "us" (default), "kr" (KOSPI/KOSDAQ), or "crypto"
     """
     try:
-        q = StockQuery(ticker=ticker, start=start, end=end, price=price)
+        q = StockQuery(ticker=ticker, start=start, end=end, price=price, market=market)
         df = fetch_price_data(q.ticker, q.start, q.end)
         series = select_price_column(df, q.price)
         result = _calc_mdd(series, q.ticker)
-        return result.model_dump(mode="json")
+        payload = result.model_dump(mode="json")
+        payload["market"] = q.market
+        payload["currency"] = currency_for(q.market, q.ticker)
+        return payload
     except ValidationError as e:
         return {"error": True, "error_type": "ValidationError", "message": str(e)}
     except StockMCPError as e:
@@ -58,19 +68,21 @@ def get_price_history(
     start: str,
     end: str,
     price: str = "adj_close",
+    market: str = "us",
 ) -> dict:
-    """Get historical price data for a US stock.
+    """Get historical price data for a stock or cryptocurrency.
 
     Returns OHLCV time series as JSON. Use for charting price history.
 
     Args:
-        ticker: US stock ticker symbol
+        ticker: Symbol (US, KR, or crypto)
         start: Start date (YYYY-MM-DD)
         end: End date (YYYY-MM-DD)
         price: Price basis - "adj_close" (default) or "close"
+        market: "us" (default), "kr", or "crypto"
     """
     try:
-        q = StockQuery(ticker=ticker, start=start, end=end, price=price)
+        q = StockQuery(ticker=ticker, start=start, end=end, price=price, market=market)
         df = fetch_price_data(q.ticker, q.start, q.end)
 
         col = "Adj Close" if q.price == "adj_close" else "Close"
@@ -92,6 +104,8 @@ def get_price_history(
 
         return {
             "ticker": q.ticker,
+            "market": q.market,
+            "currency": currency_for(q.market, q.ticker),
             "price_basis": q.price,
             "count": len(rows),
             "data": rows,
@@ -107,6 +121,7 @@ def get_drawdown_series(
     start: str,
     end: str,
     price: str = "adj_close",
+    market: str = "us",
 ) -> dict:
     """Get daily drawdown percentage series for underwater chart.
 
@@ -114,18 +129,21 @@ def get_drawdown_series(
     Use this to plot an 'underwater chart' showing drawdown depth over time.
 
     Args:
-        ticker: US stock ticker symbol
+        ticker: Symbol (US, KR, or crypto)
         start: Start date (YYYY-MM-DD)
         end: End date (YYYY-MM-DD)
         price: Price basis - "adj_close" (default) or "close"
+        market: "us" (default), "kr", or "crypto"
     """
     try:
-        q = StockQuery(ticker=ticker, start=start, end=end, price=price)
+        q = StockQuery(ticker=ticker, start=start, end=end, price=price, market=market)
         df = fetch_price_data(q.ticker, q.start, q.end)
         series = select_price_column(df, q.price)
         data = compute_drawdown_series(series)
         return {
             "ticker": q.ticker,
+            "market": q.market,
+            "currency": currency_for(q.market, q.ticker),
             "price_basis": q.price,
             "count": len(data),
             "data": data,
@@ -141,19 +159,22 @@ def compare_mdd(
     start: str,
     end: str,
     price: str = "adj_close",
+    market: str = "us",
 ) -> dict:
-    """Compare Maximum Drawdown across multiple US stocks.
+    """Compare Maximum Drawdown across multiple assets in the same market.
 
     Returns MDD results for each ticker. Use for side-by-side comparison.
+    All tickers must belong to the same market (mixing currencies is meaningless).
 
     Args:
-        tickers: List of US stock ticker symbols (2-20 tickers)
+        tickers: List of symbols (2-20)
         start: Start date (YYYY-MM-DD)
         end: End date (YYYY-MM-DD)
         price: Price basis - "adj_close" (default) or "close"
+        market: "us" (default), "kr", or "crypto"
     """
     try:
-        q = CompareQuery(tickers=tickers, start=start, end=end, price=price)
+        q = CompareQuery(tickers=tickers, start=start, end=end, price=price, market=market)
     except ValidationError as e:
         return {"error": True, "error_type": "ValidationError", "message": str(e)}
 
@@ -166,7 +187,7 @@ def compare_mdd(
             entry = mdd_result.model_dump(mode="json")
             entry["error"] = None
             results.append(entry)
-        except (StockMCPError, Exception) as e:
+        except Exception as e:
             results.append(
                 {
                     "ticker": ticker,
@@ -181,6 +202,8 @@ def compare_mdd(
             )
 
     return {
+        "market": q.market,
+        "currency": currency_for(q.market, q.tickers[0]) if q.tickers else None,
         "price_basis": q.price,
         "start": q.start,
         "end": q.end,
@@ -198,18 +221,21 @@ def _tool_calculate_mdd(
     start: str,
     end: str,
     price: str = "adj_close",
+    market: str = "us",
 ) -> dict:
-    """Calculate Maximum Drawdown for a US stock.
+    """Calculate Maximum Drawdown for a stock or cryptocurrency.
 
     Returns MDD percentage, peak/trough dates, duration, and recovery info.
 
     Args:
-        ticker: US stock ticker symbol (e.g. "AAPL", "SPY")
+        ticker: Symbol — US ("AAPL"), KR ("005930" auto-resolves to "005930.KS",
+            or explicit "035720.KQ"), or crypto ("BTC" auto-resolves to "BTC-USD")
         start: Start date in YYYY-MM-DD format
         end: End date in YYYY-MM-DD format
         price: Price basis - "adj_close" (default, dividend-adjusted) or "close"
+        market: "us" (default), "kr" (KOSPI/KOSDAQ), or "crypto"
     """
-    return calculate_mdd(ticker, start, end, price)
+    return calculate_mdd(ticker, start, end, price, market)
 
 
 @mcp.tool("get_price_history")
@@ -218,16 +244,18 @@ def _tool_get_price_history(
     start: str,
     end: str,
     price: str = "adj_close",
+    market: str = "us",
 ) -> dict:
-    """Get historical OHLCV price data for a US stock.
+    """Get historical OHLCV price data for a stock or cryptocurrency.
 
     Args:
-        ticker: US stock ticker symbol
+        ticker: Symbol (US, KR, or crypto)
         start: Start date (YYYY-MM-DD)
         end: End date (YYYY-MM-DD)
         price: Price basis - "adj_close" (default) or "close"
+        market: "us" (default), "kr", or "crypto"
     """
-    return get_price_history(ticker, start, end, price)
+    return get_price_history(ticker, start, end, price, market)
 
 
 @mcp.tool("get_drawdown_series")
@@ -236,18 +264,20 @@ def _tool_get_drawdown_series(
     start: str,
     end: str,
     price: str = "adj_close",
+    market: str = "us",
 ) -> dict:
     """Get daily drawdown percentage series for underwater chart.
 
     Each day's value = current_price / running_peak - 1 (always <= 0).
 
     Args:
-        ticker: US stock ticker symbol
+        ticker: Symbol (US, KR, or crypto)
         start: Start date (YYYY-MM-DD)
         end: End date (YYYY-MM-DD)
         price: Price basis - "adj_close" (default) or "close"
+        market: "us" (default), "kr", or "crypto"
     """
-    return get_drawdown_series(ticker, start, end, price)
+    return get_drawdown_series(ticker, start, end, price, market)
 
 
 @mcp.tool("compare_mdd")
@@ -256,16 +286,18 @@ def _tool_compare_mdd(
     start: str,
     end: str,
     price: str = "adj_close",
+    market: str = "us",
 ) -> dict:
-    """Compare Maximum Drawdown across multiple US stocks (2-20 tickers).
+    """Compare Maximum Drawdown across multiple assets (2-20 tickers, same market).
 
     Args:
-        tickers: List of US stock ticker symbols
+        tickers: List of symbols
         start: Start date (YYYY-MM-DD)
         end: End date (YYYY-MM-DD)
         price: Price basis - "adj_close" (default) or "close"
+        market: "us" (default), "kr", or "crypto"
     """
-    return compare_mdd(tickers, start, end, price)
+    return compare_mdd(tickers, start, end, price, market)
 
 
 def _safe_float(val) -> float | None:

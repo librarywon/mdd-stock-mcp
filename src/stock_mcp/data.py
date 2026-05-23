@@ -1,5 +1,7 @@
 """yfinance wrapper with TTL cache and price-column selector."""
 
+import re
+
 import pandas as pd
 import yfinance as yf
 from cachetools import TTLCache
@@ -7,6 +9,18 @@ from cachetools import TTLCache
 from stock_mcp.errors import InvalidTickerError, NoDataError
 
 _PRICE_CACHE: TTLCache = TTLCache(maxsize=128, ttl=300)
+
+_CRYPTO_QUOTE_RE = re.compile(r"-([A-Z]{3,5})$")
+
+
+def currency_for(market: str, ticker: str) -> str:
+    """Best-effort currency code for a (market, ticker) pair."""
+    if market == "kr":
+        return "KRW"
+    if market == "crypto":
+        m = _CRYPTO_QUOTE_RE.search(ticker)
+        return m.group(1) if m else "USD"
+    return "USD"
 
 
 def fetch_price_data(ticker: str, start: str, end: str) -> pd.DataFrame:
