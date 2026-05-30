@@ -1,0 +1,10 @@
+# Render Blueprint — auto-detected when this file is at the repo root.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: mdd-stock-mcp
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    autoDeploy: true

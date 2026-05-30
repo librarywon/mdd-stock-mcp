@@ -22,4 +22,5 @@ COPY --from=builder /usr/local/bin/mdd-stock-mcp /usr/local/bin/mdd-stock-mcp
 
 EXPOSE 8000
 
-CMD ["mdd-stock-mcp", "--transport", "http", "--host", "0.0.0.0", "--port", "8000"]
+# Honor $PORT (Render/Cloud Run inject this); fall back to 8000 for local docker run.
+CMD ["sh", "-c", "mdd-stock-mcp --transport http --host 0.0.0.0 --port ${PORT:-8000}"]
