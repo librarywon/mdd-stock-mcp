@@ -7,6 +7,7 @@ __pycache__/
 dist/
 .mypy_cache/
 .ruff_cache/
-README.md
 CONTRIBUTING.md
 SECURITY.md
+# README.md NOT excluded: pyproject.toml references it via `readme = "README.md"`,
+# so it must be present in the build context for `uv pip install` to succeed.
