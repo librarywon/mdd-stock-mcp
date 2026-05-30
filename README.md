@@ -2,6 +2,7 @@
 
 > An MCP server for Maximum Drawdown (MDD) analytics across US stocks, Korean stocks (KOSPI/KOSDAQ), and cryptocurrencies. Plug it into Claude Desktop and ask questions like "What was SPY's worst drawdown during COVID?" or "비트코인 2022년 MDD 알려줘" — Claude will fetch the data and discuss it conversationally.
 
+[![PyPI](https://img.shields.io/pypi/v/mdd-stock-mcp.svg)](https://pypi.org/project/mdd-stock-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python >=3.11](https://img.shields.io/badge/python-%3E%3D3.11-blue.svg)](https://www.python.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-compatible-green.svg)](https://modelcontextprotocol.io/)
@@ -29,14 +30,55 @@
 
 ## Quickstart (Claude Desktop)
 
-**1. Clone the repo:**
+**1. Install [uv](https://docs.astral.sh/uv/) (if you don't have it):**
+
+```bash
+# macOS
+brew install uv
+# Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**2. Add this to `~/Library/Application Support/Claude/claude_desktop_config.json`** (macOS) **or `%APPDATA%\Claude\claude_desktop_config.json`** (Windows):
+
+```json
+{
+  "mcpServers": {
+    "mdd-stock-mcp": {
+      "command": "uvx",
+      "args": ["mdd-stock-mcp"]
+    }
+  }
+}
+```
+
+That's it. `uvx` fetches the package from PyPI on first run and caches it.
+
+**3. Restart Claude Desktop.**
+
+Ask: *"Using mdd-stock-mcp, what was AAPL's MDD between 2020-01-01 and 2020-12-31?"*
+
+---
+
+## Quickstart (Claude Code CLI)
+
+```bash
+claude mcp add mdd-stock-mcp -s user -- uvx mdd-stock-mcp
+```
+
+Then in a new Claude Code session you'll see the `mcp__mdd-stock-mcp__*` tools.
+
+---
+
+## Install from source (for development)
 
 ```bash
 git clone https://github.com/librarywon/mdd-stock-mcp.git
 cd mdd-stock-mcp
+uv pip install -e ".[dev]"
 ```
 
-**2. Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:**
+Then point Claude Desktop at the local path:
 
 ```json
 {
@@ -48,22 +90,6 @@ cd mdd-stock-mcp
   }
 }
 ```
-
-Replace `/absolute/path/to/mdd-stock-mcp` with the actual path where you cloned the repo (e.g. `/Users/yourname/Documents/mdd-stock-mcp`).
-
-**3. Restart Claude Desktop.**
-
-Ask: *"Using mdd-stock-mcp, what was AAPL's MDD between 2020-01-01 and 2020-12-31?"*
-
----
-
-## Alternative install (after PyPI publishing)
-
-```bash
-uvx mdd-stock-mcp
-```
-
-*(Placeholder — not yet published to PyPI.)*
 
 ---
 
@@ -252,34 +278,6 @@ src/stock_mcp/
   errors.py   — Custom error types
 tests/
   test_mdd.py — Offline math tests (no network required)
-```
-
----
-
-## Claude Desktop config reference
-
-```json
-{
-  "mcpServers": {
-    "mdd-stock-mcp": {
-      "command": "uvx",
-      "args": ["--from", "/Users/jaewon/Documents/mdd-stock-mcp", "mdd-stock-mcp"]
-    }
-  }
-}
-```
-
-After publishing to PyPI, simplify to:
-
-```json
-{
-  "mcpServers": {
-    "mdd-stock-mcp": {
-      "command": "uvx",
-      "args": ["mdd-stock-mcp"]
-    }
-  }
-}
 ```
 
 ---
